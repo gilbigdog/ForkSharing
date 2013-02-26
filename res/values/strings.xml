@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FS</string>
+    <string name="menu_settings">Settings</string>
+    <string name="nfc_string">NFC</string>
+    <string name="manual_string">Manual</string>
+    <string name="join_channel_button_string">Join</string>
+    <string name="current_channel_tv">Current Channels</string>
+
+</resources>
