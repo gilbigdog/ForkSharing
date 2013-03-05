@@ -7,5 +7,6 @@
     <string name="manual_string">Manual</string>
     <string name="join_channel_button_string">Join</string>
     <string name="current_channel_tv">Current Channels</string>
+    <string name="magnet_service_action">com.mno.lab.fs.Magnet</string>
 
 </resources>
