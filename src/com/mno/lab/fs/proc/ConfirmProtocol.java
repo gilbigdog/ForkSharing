@@ -76,8 +76,10 @@ public class ConfirmProtocol {
                 m = CONFIRM_PROTOCOL_RECEIVE_RESPONSE_PATTERN.matcher(((Message) data).message);
                 if (m.matches() && m.find()) {
                     handleConfirmResponse(from, m);
+                    return;
                 }
 
+                // TODO It is test output
                 Toast.makeText(mContext, "Receive Message : " + ((Message) data).message, Toast.LENGTH_LONG).show();
             }
             // TODO Support more Data Types
@@ -135,7 +137,7 @@ public class ConfirmProtocol {
 
     private static Data GetUserData(Intent intent) {
         // TODO should support more data types
-        return new Message(intent.getStringExtra(TEST_MESSAGE));
+        return new Message(intent.getAction());
     }
 
     /**

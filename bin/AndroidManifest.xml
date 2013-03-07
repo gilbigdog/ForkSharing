@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="14"
+        android:minSdkVersion="16"
         android:targetSdkVersion="17" />
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -14,6 +14,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.NFC" />
+
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -29,6 +35,40 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- NFA tagging intents -->
+        <activity-alias
+            android:name=".NFCFire"
+            android:enabled="true"
+            android:targetActivity=".StarterActivity" >
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+
+                <data android:mimeType="application/com.mno.lab.fs" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Share via intents -->
+        <activity-alias
+            android:name=".IntentSharer"
+            android:enabled="true"
+            android:targetActivity=".StarterActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".service.SessionManager"
+            android:enabled="true"
+            android:permission="android.permission.SYSTEM_ALERT_WINDOW" >
+        </service>
         <!-- Session Management Services -->
         <service
             android:name="com.ssl.sessionservice.services.SessionService"
@@ -44,7 +84,7 @@
             android:name="com.samsung.magnet.service.MagnetService"
             android:process=":remote" >
             <intent-filter>
-                <action android:name="com.mno.lab.fs.MagnetService" />
+                <action android:name="@string/magnet_service_action" />
             </intent-filter>
         </service>
     </application>

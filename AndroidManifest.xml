@@ -15,6 +15,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.NFC" />
+
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -31,9 +36,23 @@
             </intent-filter>
         </activity>
 
+        <!-- NFA tagging intents -->
+        <activity-alias
+            android:name=".NFCFire"
+            android:enabled="true"
+            android:targetActivity=".StarterActivity" >
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+
+                <data android:mimeType="application/com.mno.lab.fs" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Share via intents -->
         <activity-alias
-            android:name=".ImageSender"
+            android:name=".IntentSharer"
             android:enabled="true"
             android:targetActivity=".StarterActivity" >
             <intent-filter>
