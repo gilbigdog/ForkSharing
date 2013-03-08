@@ -78,49 +78,66 @@ containing a value of this type.
         public static final int weight=0x7f010005;
     }
     public static final class drawable {
-        public static final int ic_launcher=0x7f020000;
-        public static final int right_switcher_collapsed=0x7f020001;
-        public static final int right_switcher_collapsed_background=0x7f020002;
-        public static final int right_switcher_collapsed_focused=0x7f020003;
-        public static final int right_switcher_collapsed_selected=0x7f020004;
-        public static final int right_switcher_expanded=0x7f020005;
-        public static final int right_switcher_expanded_background=0x7f020006;
-        public static final int right_switcher_expanded_focused=0x7f020007;
-        public static final int right_switcher_expanded_selected=0x7f020008;
+        public static final int ic_contact_picture=0x7f020000;
+        public static final int ic_launcher=0x7f020001;
+        public static final int right_switcher_collapsed=0x7f020002;
+        public static final int right_switcher_collapsed_background=0x7f020003;
+        public static final int right_switcher_collapsed_focused=0x7f020004;
+        public static final int right_switcher_collapsed_selected=0x7f020005;
+        public static final int right_switcher_expanded=0x7f020006;
+        public static final int right_switcher_expanded_background=0x7f020007;
+        public static final int right_switcher_expanded_focused=0x7f020008;
+        public static final int right_switcher_expanded_selected=0x7f020009;
     }
     public static final class id {
-        public static final int bottom=0x7f040001;
-        public static final int channel_edittext=0x7f040008;
-        public static final int connection_selector=0x7f040004;
-        public static final int current_channel_listview=0x7f04000b;
-        public static final int current_channel_textview=0x7f04000a;
-        public static final int join_channel_button=0x7f040009;
-        public static final int left=0x7f040002;
-        public static final int manual=0x7f040006;
-        public static final int manual_layout=0x7f040007;
-        public static final int menu_settings=0x7f04000f;
-        public static final int nfc=0x7f040005;
-        public static final int panelContent=0x7f04000d;
-        public static final int panelHandle=0x7f04000e;
-        public static final int right=0x7f040003;
-        public static final int rightPanel=0x7f04000c;
-        public static final int top=0x7f040000;
+        public static final int bottom=0x7f060001;
+        public static final int channel_edittext=0x7f060009;
+        public static final int connection_selector=0x7f060005;
+        public static final int current_channel_listview=0x7f06000c;
+        public static final int current_channel_textview=0x7f06000b;
+        public static final int join_channel_button=0x7f06000a;
+        public static final int left=0x7f060002;
+        public static final int manual=0x7f060007;
+        public static final int manual_layout=0x7f060008;
+        public static final int menu_settings=0x7f060010;
+        public static final int nfc=0x7f060006;
+        public static final int panelContent=0x7f06000e;
+        public static final int panelHandle=0x7f06000f;
+        public static final int right=0x7f060003;
+        public static final int rightPanel=0x7f06000d;
+        public static final int top=0x7f060000;
+        public static final int tv_nfc=0x7f060004;
     }
     public static final class layout {
-        public static final int activity_starter=0x7f030000;
-        public static final int test_slide=0x7f030001;
+        public static final int activity_nfc=0x7f030000;
+        public static final int activity_starter=0x7f030001;
+        public static final int test_slide=0x7f030002;
     }
     public static final class menu {
         public static final int activity_starter=0x7f070000;
     }
     public static final class string {
-        public static final int app_name=0x7f050000;
-        public static final int current_channel_tv=0x7f050005;
-        public static final int join_channel_button_string=0x7f050004;
-        public static final int magnet_service_action=0x7f050006;
-        public static final int manual_string=0x7f050003;
-        public static final int menu_settings=0x7f050001;
-        public static final int nfc_string=0x7f050002;
+        public static final int app_name=0x7f040000;
+        public static final int contents_contact=0x7f040002;
+        public static final int contents_email=0x7f040003;
+        public static final int contents_location=0x7f040004;
+        public static final int contents_phone=0x7f040005;
+        public static final int contents_sms=0x7f040006;
+        public static final int contents_text=0x7f040007;
+        public static final int current_channel_tv=0x7f04000d;
+        public static final int join_channel_button_string=0x7f04000c;
+        public static final int magnet_service_action=0x7f04000e;
+        public static final int manual_string=0x7f04000b;
+        public static final int menu_settings=0x7f040009;
+        public static final int msg_encode_contents_failed=0x7f040008;
+        public static final int nfc_string=0x7f04000a;
+        public static final int nv_nfc_string=0x7f040011;
+        public static final int nv_no_nfc_capable_string=0x7f040010;
+        /**  NFC View Description 
+         */
+        public static final int nv_no_nfc_string=0x7f04000f;
+        public static final int nv_no_wifi_string=0x7f040012;
+        public static final int service_action=0x7f040001;
     }
     public static final class style {
         /** 
@@ -143,12 +160,34 @@ containing a value of this type.
         res/values-v11/styles.xml on API 14+ devices.
     
  API 14 theme customizations can go here. 
+
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    
+
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        
+
+        Base application theme for API 11+. This theme completely replaces
+        AppBaseTheme from res/values/styles.xml on API 11+ devices.
+    
+ API 11 theme customizations can go here. 
+
+        Base application theme for API 14+. This theme completely replaces
+        AppBaseTheme from BOTH res/values/styles.xml and
+        res/values-v11/styles.xml on API 14+ devices.
+    
+ API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f060000;
+        public static final int AppBaseTheme=0x7f050000;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
+ Application theme. 
+ All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f060001;
+        public static final int AppTheme=0x7f050001;
     }
     public static final class styleable {
         /** Attributes that can be used with a Panel.

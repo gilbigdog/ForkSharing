@@ -22,6 +22,8 @@ public class ConfirmProtocol {
 
     public static final String TEST_MESSAGE = "aa";
 
+    public static final String TO_USER = "destuser";
+
     /**
      * UUID / Type / existence of thumbnail
      */
@@ -117,7 +119,7 @@ public class ConfirmProtocol {
         // Put uuid to hashMap to wait reponse before send actual data.
         mWaitConfirm.put(uuid, intent);
 
-        // Generate Message in certain format
+        // Generate confirm Message
         String confirmMessage = GenerateConfirmMessage(uuid, intent);
 
         // Send generated message to ask confirmation of sending actual data
@@ -143,8 +145,9 @@ public class ConfirmProtocol {
     /**
      * Handles the confirm response message
      * 
-     * It will search intent corresponding to the UUID then perform action such as
-     * send image, video, raw files, or Application
+     * It will search intent corresponding to the UUID then perform action such
+     * as send image, video, raw files, or Application
+     * 
      * @param from
      * @param m
      */
@@ -166,6 +169,7 @@ public class ConfirmProtocol {
      * 
      * It will ask to user to have confirmation before receiving actual data.
      * Once a user agrees, it will send response message to from user
+     * 
      * @param from
      * @param m
      */

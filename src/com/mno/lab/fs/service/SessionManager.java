@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import com.mno.lab.fs.R;
+import com.mno.lab.fs.proc.ConfirmProtocol;
 import com.mno.lab.fs.utils.Logs;
 import com.samsung.ssl.smeshnet.ManagedSession;
 import com.samsung.ssl.smeshnet.ManagedSession.SessionStateListener;
@@ -29,193 +30,222 @@ import com.samsung.ssl.smeshnet.services.SessionManagementService.RemoteSessionI
 
 public class SessionManager extends Service implements SessionStateListener {
 
-	private Context mContext;
+    private Context mContext;
 
-	/**
-	 * Managed Session
-	 */
-	private ManagedSession mSession;
+    /**
+     * Managed Session
+     */
+    private ManagedSession mSession;
 
-	/**
-	 * Session State Listener
-	 */
-	private List<SessionStateListener> mSessionStateListener;
+    /**
+     * Session State Listener
+     */
+    private List<SessionStateListener> mSessionStateListener = new ArrayList<SessionStateListener>();
 
-	/**
-	 * Data listener via this mSession
-	 */
-	private DataReceivedListener mDataReceivedListener = new DataReceivedListener() {
+    /**
+     * Data listener via this mSession
+     */
+    private DataReceivedListener mDataReceivedListener = new DataReceivedListener() {
 
-		@Override
-		public void onReceivedData(User user, byte[] data) {
-			// TODO Auto-generated method stub
+        @Override
+        public void onReceivedData(User user, byte[] data) {
+            // TODO Auto-generated method stub
 
-		}
+        }
 
-		@Override
-		public void onReceivedData(Data data) {
-			// TODO Auto-generated method stub
+        @Override
+        public void onReceivedData(Data data) {
+            // TODO Auto-generated method stub
 
-		}
-	};
+        }
+    };
 
-	/**
-	 * Magnet Session Action name only for this app
-	 */
-	private String mMagnetAction;
+    /**
+     * Magnet Session Action name only for this app
+     */
+    private String mMagnetAction;
 
-	/**
-	 * to retreive Session List
-	 */
-	private SessionListManager mSessionList;
+    /**
+     * to retreive Session List
+     */
+    private SessionListManager mSessionList;
 
-	/**
-	 * Session Name currently it is in.
-	 */
-	private String mSessionName;
+    /**
+     * Session Name currently it is in.
+     */
+    private String mSessionName;
 
-	@Override
-	public IBinder onBind(Intent arg0) {
-		return mBinder;
-	}
+    /**
+     * Handles handshake and transfer data
+     */
+    private ConfirmProtocol mConfirmProtocol;
 
-	// implementation of the aidl interface
-	private final ISessionManager.Stub mBinder = new ISessionManager.Stub() {
+    @Override
+    public IBinder onBind(Intent arg0) {
+        return mBinder;
+    }
 
-		@Override
-		public void initSession() throws RemoteException {
-			mMagnetAction = getResources().getString(
-					R.string.magnet_service_action);
+    // implementation of the aidl interface
+    private final ISessionManager.Stub mBinder = new ISessionManager.Stub() {
 
-			if (TextUtils.isEmpty(mMagnetAction)) {
-				throw new IllegalArgumentException(
-						"Margnet Service Action String is not ready");
-			}
+        @Override
+        public void initSession() throws RemoteException {
+            init();
+        }
 
-			Logs.SetILogger();
-			// Initiate ManagedSession
-			mSession = new ManagedSession(getApplicationContext(),
-					mMagnetAction, SessionManager.this);
-			Logs.Log("initSession");
-		}
+        @Override
+        public void connect(String session, boolean randomGen)
+                throws RemoteException {
+            SessionManager.this.connect(session, randomGen);
+        }
 
-		@Override
-		public void connect(String session, boolean randomGen)
-				throws RemoteException {
-			if (!TextUtils.isEmpty(session) && !sessionExist(session)) {
-				mSession.connect(session);
-				mSessionName = session;
-				Logs.Log("connect : session " + session);
-			} else {
-				Logs.Log("connect : session exists or invalid " + session);
-				if (randomGen) {
-					String uuid = UUID.randomUUID().toString();
-					connect(uuid, false);
-				}
-			}
-		}
+        @Override
+        public String getSessionName() throws RemoteException {
+            return mSessionName;
+        }
 
-		@Override
-		public void sendMessage(String message) throws RemoteException {
+        @Override
+        public boolean isConnected() throws RemoteException {
+            if (mSession == null) {
+                return false;
+            }
+            return mSession.isConnected();
+        }
 
-		}
+        @Override
+        public void shareVia(Intent intent) throws RemoteException {
+            // TODO : it should pop-up User list to let user select destination then call
+            // mConfirmProtocol.sendData(null, intent);
+        }
+    };
 
-		@Override
-		public String getSessionName() throws RemoteException {
-			return mSessionName;
-		}
-	};
+    public void init() {
+        mMagnetAction = getResources().getString(
+                R.string.magnet_service_action);
 
-	public Collection<User> getAllUsers() {
-		return mSession.getUsers();
-	}
+        if (TextUtils.isEmpty(mMagnetAction)) {
+            throw new IllegalArgumentException(
+                    "Margnet Service Action String is not ready");
+        }
 
-	private boolean sessionExist(String sessionName) {
-		if (mSessionList == null) {
-			mSessionList = new SessionListManager(mContext, mMagnetAction);
-		}
-		for (RemoteSessionInfo info : mSessionList.getCurrentSessionList()) {
-			if (TextUtils.equals(sessionName, info.getSessionName())) {
-				return true;
-			}
-		}
-		return false;
-	}
+        Logs.SetILogger();
+        // Initiate ManagedSession
+        mSession = new ManagedSession(getApplicationContext(),
+                mMagnetAction, this);
+        mConfirmProtocol = new ConfirmProtocol(mContext, mSession);
+        Logs.Log("initSession");
+    }
 
-	private void registerSessionStateListener(SessionStateListener listener) {
-		if (listener == null) {
-			return;
-		}
+    public void connect(String session, boolean randomGen) {
+        Logs.Log("try to join channel : " + session + ", " + randomGen);
+        if (!TextUtils.isEmpty(session)) {
+            mSession.connect(session);
+            mSessionName = session;
+            Logs.Log("connect : session " + session);
+        } else {
+            Logs.Log("connect : session exists or invalid " + session);
+            if (randomGen) {
+                String uuid = UUID.randomUUID().toString();
+                connect(uuid, false);
+            }
+        }
+    }
 
-		if (mSessionStateListener == null) {
-			mSessionStateListener = new ArrayList<SessionStateListener>();
-		}
+    public Collection<User> getAllUsers() {
+        return mSession.getUsers();
+    }
 
-		mSessionStateListener.add(listener);
-	}
+    // TODO It works?
+    /*
+     * private boolean sessionExist(String sessionName) {
+     * Logs.Log("sessionExist : " + sessionName); if (mSessionList == null) {
+     * mSessionList = new SessionListManager(mContext, mMagnetAction); } for
+     * (RemoteSessionInfo info : mSessionList.getCurrentSessionList()) { if
+     * (TextUtils.equals(sessionName, info.getSessionName())) { return true; } }
+     * return false; }
+     */
 
-	private boolean unregisterSessionStateListener(SessionStateListener listener) {
-		if (mSessionStateListener == null || listener == null) {
-			return false;
-		}
+    private void registerSessionStateListener(SessionStateListener listener) {
+        if (listener == null) {
+            return;
+        }
 
-		return mSessionStateListener.remove(listener);
-	}
+        if (mSessionStateListener == null) {
+            mSessionStateListener = new ArrayList<SessionStateListener>();
+        }
 
-	@Override
-	public void onConnected(ManagedSession arg0) {
-		for (SessionStateListener lis : mSessionStateListener) {
-			lis.onConnected(arg0);
-		}
-	}
+        mSessionStateListener.add(listener);
+    }
 
-	@Override
-	public void onConnectionFailed(String arg0) {
-		for (SessionStateListener lis : mSessionStateListener) {
-			lis.onConnectionFailed(arg0);
-		}
-	}
+    private boolean unregisterSessionStateListener(SessionStateListener listener) {
+        if (mSessionStateListener == null || listener == null) {
+            return false;
+        }
 
-	@Override
-	public void onDisconnected() {
-		for (SessionStateListener lis : mSessionStateListener) {
-			lis.onDisconnected();
-		}
-	}
+        return mSessionStateListener.remove(listener);
+    }
 
-	@Override
-	public void onReconnected(ManagedSession arg0) {
-		for (SessionStateListener lis : mSessionStateListener) {
-			lis.onReconnected(arg0);
-		}
-	}
+    @Override
+    public void onConnected(ManagedSession arg0) {
+        Logs.Log("onConnected");
 
-	ViewGroup vg;
+        for (SessionStateListener lis : mSessionStateListener) {
+            lis.onConnected(arg0);
+        }
+    }
 
-	@Override
-	public void onCreate() {
-		super.onCreate();
+    @Override
+    public void onConnectionFailed(String arg0) {
+        Logs.Log("onConnectionFailed");
 
-		Log.d("GIL", "YYYYYYYYYYYYYYY");
-		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		vg = (ViewGroup) inflater.inflate(R.layout.test_slide, null);
+        for (SessionStateListener lis : mSessionStateListener) {
+            lis.onConnectionFailed(arg0);
+        }
+    }
 
-		WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-				WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-				WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-				PixelFormat.TRANSLUCENT);
+    @Override
+    public void onDisconnected() {
+        Logs.Log("onDisconnected");
+        for (SessionStateListener lis : mSessionStateListener) {
+            lis.onDisconnected();
+        }
+    }
 
-		WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-		wm.addView(vg, params);
-	}
+    @Override
+    public void onReconnected(ManagedSession arg0) {
+        Logs.Log("onReconnected");
+        for (SessionStateListener lis : mSessionStateListener) {
+            lis.onReconnected(arg0);
+        }
+    }
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		if (vg != null) {
-			Log.d("GIL", "NNNNNNNNNNNNNN");
-			((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(vg);
-			vg = null;
-		}
-	}
+    ViewGroup vg;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Logs.Log("onCreate");
+        init();
+        /*
+         * Log.d("GIL", "YYYYYYYYYYYYYYY"); LayoutInflater inflater =
+         * (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+         * vg = (ViewGroup) inflater.inflate(R.layout.test_slide, null);
+         * WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+         * WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
+         * WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+         * PixelFormat.TRANSLUCENT); WindowManager wm = (WindowManager)
+         * getSystemService(WINDOW_SERVICE); wm.addView(vg, params);
+         */
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Logs.Log("SessionManager : onDestroy()");
+        if (vg != null) {
+            Log.d("GIL", "NNNNNNNNNNNNNN");
+            ((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(vg);
+            vg = null;
+        }
+    }
 }

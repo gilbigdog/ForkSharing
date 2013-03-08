@@ -36,7 +36,7 @@
             </intent-filter>
         </activity>
 
-        <!-- NFA tagging intents -->
+        <!-- NFC tagging intents -->
         <activity-alias
             android:name=".NFCFire"
             android:enabled="true"
@@ -53,7 +53,7 @@
         <!-- Share via intents -->
         <activity-alias
             android:name=".IntentSharer"
-            android:enabled="true"
+            android:enabled="false"
             android:targetActivity=".StarterActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -64,19 +64,21 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Session Management Services -->
         <service
             android:name=".service.SessionManager"
             android:enabled="true"
-            android:permission="android.permission.SYSTEM_ALERT_WINDOW" >
+            android:permission="android.permission.SYSTEM_ALERT_WINDOW">
         </service>
+
         <!-- Session Management Services -->
         <service
-            android:name="com.ssl.sessionservice.services.SessionService"
+            android:name="com.samsung.ssl.smeshnet.services.SessionService"
             android:enabled="true"
             android:exported="false" >
         </service>
         <service
-            android:name="com.ssl.sessionservice.services.SessionManagementService"
+            android:name="com.samsung.ssl.smeshnet.services.SessionManagementService"
             android:enabled="true"
             android:exported="false" >
         </service>
@@ -88,5 +90,4 @@
             </intent-filter>
         </service>
     </application>
-
 </manifest>

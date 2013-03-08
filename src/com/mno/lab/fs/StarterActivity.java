@@ -1,82 +1,265 @@
 package com.mno.lab.fs;
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcAdapter.CreateNdefMessageCallback;
+import android.nfc.NfcAdapter.OnNdefPushCompleteCallback;
 import android.nfc.NfcEvent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
+import android.os.RemoteException;
+import android.text.TextUtils;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mno.lab.fs.proc.ConfirmProtocol;
 import com.mno.lab.fs.service.ISessionManager;
+import com.mno.lab.fs.service.SessionManager;
 import com.mno.lab.fs.utils.Logs;
-import com.mno.lab.fs.view.Panel;
 
 public class StarterActivity extends Activity implements
-		CreateNdefMessageCallback {
+        CreateNdefMessageCallback, OnNdefPushCompleteCallback {
 
-	private static final String PACKAGE_NAME = "com.mno.lab.fs";
+    private static final String PACKAGE_NAME = "com.mno.lab.fs";
+    private static final String MIME_TYPE = "application/com.mno.lab.fs";
+    private static final int SLEEP_TO_BIND = 2000;
 
-	private ServiceConnection mServiceConnection = new ServiceConnection() {
+    private ForkServiceConnection mServiceConnection = new ForkServiceConnection();
 
-		private ISessionManager mSessionManager;
+    class ForkServiceConnection implements ServiceConnection {
 
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-			mSessionManager = null;
-			Logs.Log("onServiceDisconnected");
-		}
+        public String ndefMsg;
+        public Intent shareIntent;
 
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			Logs.Log("onServiceConnected");
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Logs.Log("onServiceDisconnected");
 
-			// get instance of the aidl binder
-			mSessionManager = ISessionManager.Stub.asInterface(service);
-		}
-	};
+            mSessionManager = null;
+            ndefMsg = null;
+            shareIntent = null;
+        }
 
-	private Panel panel;
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Logs.Log("onServiceConnected");
 
-	private NfcAdapter mNfcAdapter;
+            // get instance of the aidl binder
+            mSessionManager = ISessionManager.Stub.asInterface(service);
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+            if (TextUtils.isEmpty(ndefMsg)) {
+                Logs.Log("onServiceConnected : handle NDEF Message : " + ndefMsg);
 
-		String action = getIntent().getAction();
-		if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
-			Logs.Log("ACTION_NDEF_DISCOVERED");
-			mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-			if (mNfcAdapter == null) {
-				Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG)
-						.show();
+            } else if (shareIntent != null) {
+                Logs.Log("onServiceConnected : handle Intent : " + shareIntent.toString());
+                try {
+                    mSessionManager.shareVia(shareIntent);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            notifyTo();
+        }
+    }
 
-				PackageManager pkgMgr = getPackageManager();
-				ComponentName comp = new ComponentName(PACKAGE_NAME,
-						PACKAGE_NAME + ".NFCFire");
-				pkgMgr.setComponentEnabledSetting(comp,
-						PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
-			}
+    private NfcAdapter mNfcAdapter;
+    private ISessionManager mSessionManager = null;
 
-			// 콜백 등록
-			mNfcAdapter.setNdefPushMessageCallback(this, this);
-		} else if (Intent.ACTION_SEND.equals(action)) {
-			Logs.Log("ACTION_SEND");
+    private TextView tv;
 
-		} else {
-			setContentView(R.layout.activity_starter);
-		}
-	}
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-	@Override
-	public NdefMessage createNdefMessage(NfcEvent event) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            Logs.Log("ACTION_NDEF_DISCOVERED");
+            List<String> messages = readNFCmessage(intent);
+            mServiceConnection.ndefMsg = messages.get(0);
+            Logs.Log(messages.get(0));
+            finish();
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            Logs.Log("ACTION_SEND");
+            if (mSessionManager == null) {
+                mServiceConnection.shareIntent = intent;
+                bindToSessionManager();
+            } else {
+                try {
+                    mSessionManager.shareVia(intent);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            finish();
+        } else {
+            setContentView(R.layout.activity_nfc);
+            tv = (TextView) findViewById(R.id.tv_nfc);
+
+            if (mSessionManager == null) {
+                bindToSessionManager();
+            }
+        }
+    }
+
+    private List<String> readNFCmessage(Intent intent) {
+        Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+        if (rawMsgs != null) {
+            List<String> res = new ArrayList<String>();
+            for (int i = 0; i < rawMsgs.length; i++) {
+                String msg = new String(((NdefMessage) rawMsgs[i]).getRecords()[0].getPayload());
+                res.add(msg);
+                Logs.Log("Received message via NFC : " + msg);
+            }
+            return res;
+        }
+        return null;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        boolean hasNFC = nfcAvailality();
+        String summ;
+        if (hasNFC) {
+            if (!mNfcAdapter.isEnabled()) {
+                summ = getResources().getString(R.string.nv_no_nfc_string);
+            } else {
+                summ = getResources().getString(R.string.nv_nfc_string);
+            }
+        } else {
+            summ = getResources().getString(R.string.nv_no_nfc_capable_string);
+        }
+        tv.setText(summ);
+    }
+
+    private boolean nfcAvailality() {
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
+            Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG)
+                    .show();
+            enableComponent("NFCFire", false);
+            return false;
+        }
+        mNfcAdapter.setNdefPushMessageCallback(this, this);
+        return true;
+    }
+
+    private void enableComponent(String name, boolean enable) {
+        PackageManager pkgMgr = getPackageManager();
+        ComponentName comp = new ComponentName(PACKAGE_NAME,
+                PACKAGE_NAME + "." + name);
+        pkgMgr.setComponentEnabledSetting(comp,
+                enable ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED :
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
+    }
+
+    synchronized void notifyTo() {
+        Logs.Log("notifyTo");
+        this.notifyAll();
+    }
+
+    synchronized void waitRes(int msec) throws InterruptedException {
+        Logs.Log("waitRes : " + msec);
+        this.wait(msec);
+    }
+
+    /**
+     * A callback to be invoked when another NFC device capable of NDEF push
+     * (Android Beam) is within range.
+     */
+    @Override
+    public NdefMessage createNdefMessage(NfcEvent event) {
+        Logs.Log("Detect NFC device");
+        mNfcAdapter.setOnNdefPushCompleteCallback(this, this);
+
+        if (mSessionManager == null) {
+            bindToSessionManager();
+        }
+
+        // Wait until it binds to SessionManager
+        try {
+            waitRes(SLEEP_TO_BIND);
+        } catch (InterruptedException e) {
+            Logs.Log("Fail to sleep");
+            e.printStackTrace();
+        }
+
+        // Get Channel Name
+        String session = new String();
+        try {
+            if (mSessionManager != null) {
+                if (!mSessionManager.isConnected()) {
+                    mSessionManager.connect(null, true);
+                }
+                session = mSessionManager.getSessionName();
+            } else {
+                Logs.Log("Session Manager is null");
+            }
+        } catch (RemoteException e) {
+            Logs.Log("Fail to connect");
+            e.printStackTrace();
+        }
+
+        // Prepare NDEF message
+        NdefMessage msg = new NdefMessage(
+                new NdefRecord[] { createMimeRecord(
+                        MIME_TYPE, session.getBytes())
+                });
+        Logs.Log("Send NDEF message : " + session);
+        return msg;
+    }
+
+    private void bindToSessionManager() {
+        Intent callService = new Intent(this, SessionManager.class);
+        if (!bindService(callService, mServiceConnection, BIND_AUTO_CREATE)) {
+            Logs.Log("Cannot bind to SessionManager");
+        }
+    }
+
+    /**
+     * Creates a custom MIME type encapsulated in an NDEF record
+     */
+    private NdefRecord createMimeRecord(String mimeType, byte[] payload) {
+        byte[] mimeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
+        NdefRecord mimeRecord = new NdefRecord(
+                NdefRecord.TNF_MIME_MEDIA, mimeBytes, new byte[0], payload);
+        return mimeRecord;
+    }
+
+    /**
+     * A callback to be invoked when the system successfully delivers your
+     * NdefMessage to another device.
+     */
+    @Override
+    public void onNdefPushComplete(NfcEvent event) {
+        Logs.Log("System successfully delivers message to another device");
+        Toast.makeText(getApplicationContext(), "Join Channel", Toast.LENGTH_LONG).show();
+        finish();
+    }
+
+    private boolean isWiFiConnected() {
+        // Setup WiFi
+        WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+
+        // Get WiFi status
+        WifiInfo info = wifi.getConnectionInfo();
+        return !TextUtils.isEmpty(info.getBSSID());
+    }
 }

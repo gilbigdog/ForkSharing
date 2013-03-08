@@ -9,4 +9,10 @@
     <string name="current_channel_tv">Current Channels</string>
     <string name="magnet_service_action">com.mno.lab.fs.Magnet</string>
 
+    <!-- NFC View Description -->
+    <string name="nv_no_nfc_string">Please, Turn on NFC and try again</string>
+    <string name="nv_no_nfc_capable_string">This device is not NFC capable device. Sorry</string>
+    <string name="nv_nfc_string">Please, touch this device to another NFC device and click screen</string>
+    <string name="nv_no_wifi_string">Please, Turn on Wi-Fi and connect to the same AP.</string>
+    
 </resources>

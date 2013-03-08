@@ -8,38 +8,39 @@ import com.samsung.ssl.smeshnet.utils.Logging;
 public class Logs {
 
     private static final String TAG = "FS";
+    private static final String TAG2 = TAG + ":Smeshnet";
 
     public static void SetILogger() {
         Logging.logger = new ILogger() {
 
             @Override
             public void LogW(Exception exception) {
-                Log.w(TAG, exception.toString());
+                Log.w(TAG2, exception.toString());
             }
 
             @Override
             public void LogW(String message) {
-                android.util.Log.w(TAG, message);
+                android.util.Log.w(TAG2, message);
             }
 
             @Override
             public void LogI(String message) {
-                android.util.Log.i(TAG, message);
+                android.util.Log.i(TAG2, message);
             }
 
             @Override
             public void Log(String message) {
-                android.util.Log.d(TAG, message);
+                android.util.Log.d(TAG2, message);
             }
 
             @Override
             public void Log(Exception e) {
-                Log.e(TAG, "", e);
+                Log.e(TAG2, "", e);
             }
         };
     }
     
     public static void Log(String message){
-        Log.d(TAG, message);
+        Log.v(TAG, message);
     }
 }
