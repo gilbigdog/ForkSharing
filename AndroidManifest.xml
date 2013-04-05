@@ -16,6 +16,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <uses-feature
         android:name="android.hardware.nfc"
@@ -40,6 +43,7 @@
         <activity-alias
             android:name=".NFCFire"
             android:enabled="true"
+            android:permission="android.permission.ACCESS_NETWORK_STATE"
             android:targetActivity=".StarterActivity" >
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
@@ -53,10 +57,13 @@
         <!-- Share via intents -->
         <activity-alias
             android:name=".IntentSharer"
-            android:enabled="false"
+            android:enabled="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:noHistory="true"
             android:targetActivity=".StarterActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
 
                 <category android:name="android.intent.category.DEFAULT" />
 
@@ -68,7 +75,7 @@
         <service
             android:name=".service.SessionManager"
             android:enabled="true"
-            android:permission="android.permission.SYSTEM_ALERT_WINDOW">
+            android:permission="android.permission.SYSTEM_ALERT_WINDOW" >
         </service>
 
         <!-- Session Management Services -->
@@ -90,4 +97,5 @@
             </intent-filter>
         </service>
     </application>
+
 </manifest>

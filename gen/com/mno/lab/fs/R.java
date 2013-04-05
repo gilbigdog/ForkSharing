@@ -77,47 +77,40 @@ containing a value of this type.
          */
         public static final int weight=0x7f010005;
     }
+    public static final class dimen {
+        public static final int drawer_handle_thick=0x7f070000;
+    }
     public static final class drawable {
         public static final int ic_contact_picture=0x7f020000;
         public static final int ic_launcher=0x7f020001;
-        public static final int right_switcher_collapsed=0x7f020002;
-        public static final int right_switcher_collapsed_background=0x7f020003;
-        public static final int right_switcher_collapsed_focused=0x7f020004;
-        public static final int right_switcher_collapsed_selected=0x7f020005;
-        public static final int right_switcher_expanded=0x7f020006;
-        public static final int right_switcher_expanded_background=0x7f020007;
-        public static final int right_switcher_expanded_focused=0x7f020008;
-        public static final int right_switcher_expanded_selected=0x7f020009;
+        public static final int ic_launcher_gallery=0x7f020002;
+        public static final int ic_launcher_video=0x7f020003;
     }
     public static final class id {
+        public static final int app_icon=0x7f060005;
+        public static final int app_name_view=0x7f060006;
         public static final int bottom=0x7f060001;
-        public static final int channel_edittext=0x7f060009;
-        public static final int connection_selector=0x7f060005;
-        public static final int current_channel_listview=0x7f06000c;
-        public static final int current_channel_textview=0x7f06000b;
-        public static final int join_channel_button=0x7f06000a;
+        public static final int contact_name=0x7f060009;
+        public static final int contact_phonenumber=0x7f060008;
+        public static final int contact_pic=0x7f060007;
+        public static final int dialog_app_share_apk_view=0x7f06000a;
+        public static final int dialog_app_share_info_view=0x7f06000b;
         public static final int left=0x7f060002;
-        public static final int manual=0x7f060007;
-        public static final int manual_layout=0x7f060008;
-        public static final int menu_settings=0x7f060010;
-        public static final int nfc=0x7f060006;
-        public static final int panelContent=0x7f06000e;
-        public static final int panelHandle=0x7f06000f;
         public static final int right=0x7f060003;
-        public static final int rightPanel=0x7f06000d;
         public static final int top=0x7f060000;
         public static final int tv_nfc=0x7f060004;
     }
     public static final class layout {
         public static final int activity_nfc=0x7f030000;
-        public static final int activity_starter=0x7f030001;
-        public static final int test_slide=0x7f030002;
-    }
-    public static final class menu {
-        public static final int activity_starter=0x7f070000;
+        public static final int application_item=0x7f030001;
+        public static final int contact_item=0x7f030002;
+        public static final int dialog_app_share=0x7f030003;
     }
     public static final class string {
         public static final int app_name=0x7f040000;
+        /**  Contact Layout Description 
+         */
+        public static final int contact_pic_string=0x7f040014;
         public static final int contents_contact=0x7f040002;
         public static final int contents_email=0x7f040003;
         public static final int contents_location=0x7f040004;
@@ -125,6 +118,10 @@ containing a value of this type.
         public static final int contents_sms=0x7f040006;
         public static final int contents_text=0x7f040007;
         public static final int current_channel_tv=0x7f04000d;
+        /**  Application Share Dialog 
+         */
+        public static final int dialog_app_share_apk_title=0x7f040015;
+        public static final int dialog_app_share_info_title=0x7f040016;
         public static final int join_channel_button_string=0x7f04000c;
         public static final int magnet_service_action=0x7f04000e;
         public static final int manual_string=0x7f04000b;
@@ -136,7 +133,8 @@ containing a value of this type.
         /**  NFC View Description 
          */
         public static final int nv_no_nfc_string=0x7f04000f;
-        public static final int nv_no_wifi_string=0x7f040012;
+        public static final int nv_no_wifi_no_nfc_string=0x7f040012;
+        public static final int nv_no_wifi_string=0x7f040013;
         public static final int service_action=0x7f040001;
     }
     public static final class style {

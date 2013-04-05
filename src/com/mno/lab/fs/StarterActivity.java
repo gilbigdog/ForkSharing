@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -18,16 +17,15 @@ import android.nfc.NfcAdapter;
 import android.nfc.NfcAdapter.CreateNdefMessageCallback;
 import android.nfc.NfcAdapter.OnNdefPushCompleteCallback;
 import android.nfc.NfcEvent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.mno.lab.fs.proc.ConfirmProtocol;
 import com.mno.lab.fs.service.ISessionManager;
 import com.mno.lab.fs.service.SessionManager;
 import com.mno.lab.fs.utils.Logs;
@@ -35,9 +33,14 @@ import com.mno.lab.fs.utils.Logs;
 public class StarterActivity extends Activity implements
         CreateNdefMessageCallback, OnNdefPushCompleteCallback {
 
-    private static final String PACKAGE_NAME = "com.mno.lab.fs";
+    public static final String PACKAGE_NAME = "com.mno.lab.fs";
     private static final String MIME_TYPE = "application/com.mno.lab.fs";
     private static final int SLEEP_TO_BIND = 2000;
+
+    private NfcAdapter mNfcAdapter;
+    private ISessionManager mSessionManager = null;
+
+    private TextView tv;
 
     private ForkServiceConnection mServiceConnection = new ForkServiceConnection();
 
@@ -62,37 +65,48 @@ public class StarterActivity extends Activity implements
             // get instance of the aidl binder
             mSessionManager = ISessionManager.Stub.asInterface(service);
 
-            if (TextUtils.isEmpty(ndefMsg)) {
+            if (!TextUtils.isEmpty(ndefMsg)) {
                 Logs.Log("onServiceConnected : handle NDEF Message : " + ndefMsg);
-
+                try {
+                    mSessionManager.connect(ndefMsg, false);
+                } catch (RemoteException e) {
+                    Logs.Log("Not able to connect to " + ndefMsg);
+                    e.printStackTrace();
+                } finally {
+                    ndefMsg = null;
+                }
             } else if (shareIntent != null) {
                 Logs.Log("onServiceConnected : handle Intent : " + shareIntent.toString());
                 try {
                     mSessionManager.shareVia(shareIntent);
                 } catch (RemoteException e) {
                     e.printStackTrace();
+                } finally {
+                    shareIntent = null;
                 }
             }
             notifyTo();
+            // TODO : when Smeshnet supports remote service, should unbind
+            // unbindService(mServiceConnection);
         }
     }
-
-    private NfcAdapter mNfcAdapter;
-    private ISessionManager mSessionManager = null;
-
-    private TextView tv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+Log.d("GIL", "qwdqwd");
         Intent intent = getIntent();
         String action = intent.getAction();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             Logs.Log("ACTION_NDEF_DISCOVERED");
-            List<String> messages = readNFCmessage(intent);
-            mServiceConnection.ndefMsg = messages.get(0);
-            Logs.Log(messages.get(0));
+            if (isWiFiConnected()) {
+                String summ = getResources().getString(R.string.nv_no_wifi_string);
+                Toast.makeText(getApplicationContext(), summ, Toast.LENGTH_LONG).show();
+            } else {
+                List<String> messages = readNFCmessage(intent);
+                mServiceConnection.ndefMsg = messages.get(0);
+                bindToSessionManager();
+            }
             finish();
         } else if (Intent.ACTION_SEND.equals(action)) {
             Logs.Log("ACTION_SEND");
@@ -135,6 +149,10 @@ public class StarterActivity extends Activity implements
     protected void onResume() {
         super.onResume();
 
+        if (tv == null) {
+            return;
+        }
+
         boolean hasNFC = nfcAvailality();
         String summ;
         if (hasNFC) {
@@ -144,7 +162,11 @@ public class StarterActivity extends Activity implements
                 summ = getResources().getString(R.string.nv_nfc_string);
             }
         } else {
-            summ = getResources().getString(R.string.nv_no_nfc_capable_string);
+            if (isWiFiConnected()) {
+                summ = getResources().getString(R.string.nv_no_nfc_capable_string);
+            } else {
+                summ = getResources().getString(R.string.nv_no_wifi_no_nfc_string);
+            }
         }
         tv.setText(summ);
     }
@@ -157,6 +179,7 @@ public class StarterActivity extends Activity implements
             enableComponent("NFCFire", false);
             return false;
         }
+        enableComponent("NFCFire", true);
         mNfcAdapter.setNdefPushMessageCallback(this, this);
         return true;
     }

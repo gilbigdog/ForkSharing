@@ -13,6 +13,14 @@
     <string name="nv_no_nfc_string">Please, Turn on NFC and try again</string>
     <string name="nv_no_nfc_capable_string">This device is not NFC capable device. Sorry</string>
     <string name="nv_nfc_string">Please, touch this device to another NFC device and click screen</string>
-    <string name="nv_no_wifi_string">Please, Turn on Wi-Fi and connect to the same AP.</string>
+    <string name="nv_no_wifi_no_nfc_string">Please, Turn on Wi-Fi and NFC then connect to the same AP as your friends are connecting to.</string>
+    <string name="nv_no_wifi_string">Please, Turn on Wi-Fi then connect to the same AP as your friends are connecting to.</string>
+
+    <!-- Contact Layout Description -->
+    <string name="contact_pic_string">Image of this Contact</string>
+
+    <!-- Application Share Dialog -->
+    <string name="dialog_app_share_apk_title">File Sharing</string>
+    <string name="dialog_app_share_info_title">Info Sharing</string>
     
 </resources>
