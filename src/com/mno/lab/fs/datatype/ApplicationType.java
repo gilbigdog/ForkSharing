@@ -9,11 +9,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.drawable.Drawable;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.mno.lab.fs.R;
@@ -46,12 +46,22 @@ public class ApplicationType extends DefaultType {
 
     @Override
     public void send(ManagedSession session, User user) {
-        showSharingSelectDialog(session, user);
+        super.send(session, user);
+        CharSequence appName = mContext.getPackageManager().getApplicationLabel(appInfo);
+        session.send(user, new ApplicationPkgData(appInfo.packageName, appName));
+
+        // TODO : send APK or Package Name only?
+        // showSharingSelectDialog(session, user);
     }
 
     @Override
     public void broadcast(ManagedSession session) {
-        showSharingSelectDialog(session, null);
+        super.broadcast(session);
+        CharSequence appName = mContext.getPackageManager().getApplicationLabel(appInfo);
+        session.broadcast(new ApplicationPkgData(appInfo.packageName, appName));
+
+        // TODO : send APK or Package Name only?
+        // showSharingSelectDialog(session, null);
     }
 
     @Override
@@ -63,41 +73,71 @@ public class ApplicationType extends DefaultType {
     public View getHelperView(LayoutInflater inflater, View convertView) {
 
         if (mHelperView == null) {
-            mHelperView = inflater.inflate(R.layout.application_item, null);
+            LinearLayout mHelperView = (LinearLayout) inflater.inflate(R.layout.default_type_view, null);
+            TextView type_tv = (TextView) mHelperView.findViewById(R.id.transfer_type_tv);
+
+            View typeView = inflater.inflate(R.layout.application_item, null);
             TextView nameTextView = (TextView) mHelperView.findViewById(R.id.app_name_view);
             ImageView iconImageView = (ImageView) mHelperView.findViewById(R.id.app_icon);
-
-            PackageManager pm = mContext.getPackageManager();
-            iconImageView.setBackground(pm.getApplicationIcon(appInfo));
-            nameTextView.setText(pm.getApplicationLabel(appInfo));
+            switch (mTransferType) {
+                case SEND:
+                    type_tv.setText("S");
+                    PackageManager pm = mContext.getPackageManager();
+                    iconImageView.setBackground(pm.getApplicationIcon(appInfo));
+                    nameTextView.setText(pm.getApplicationLabel(appInfo));
+                    break;
+                case RECEIVE:
+                    type_tv.setText("R");
+                    nameTextView.setText(appInfo.name);
+                    break;
+            }
+            mHelperView.addView(typeView);
         }
 
         return mHelperView;
     }
 
     @Override
-    public void onSelect(Handler callback) {
-        // TODO Auto-generated method stub
+    public void onSelect() {
+        super.onSelect();
+        // TODO : action?
     }
 
     @Override
     public void onDestory() {
+        if (appInfo != null) {
+            appInfo = null;
+        }
+
+        if (mHelperView != null) {
+            mHelperView = null;
+        }
     }
 
-    public static ApplicationType ParseVideoUri(Context ctx, Intent intent) throws IOException {
+    public static ApplicationType ParseVideoUri(Context ctx, Intent intent, TRANSFER_TYPE type) throws IOException {
         if (mIcon == null) {
             mIcon = GetDefaultIcon(ctx, PACKAGE_NAME);
         }
 
         ApplicationType res = new ApplicationType(ctx);
+        res.mTransferType = type;
 
         String pkgName = intent.getStringExtra(Intent.EXTRA_TEXT);
-        try {
-            res.appInfo = ctx.getPackageManager().getApplicationInfo(pkgName, 0);
-            return res;
-        } catch (NameNotFoundException e) {
-            Logs.Log("Cannot find " + pkgName);
-            e.printStackTrace();
+
+        switch (type) {
+            case SEND:
+                try {
+                    res.appInfo = ctx.getPackageManager().getApplicationInfo(pkgName, 0);
+                    return res;
+                } catch (NameNotFoundException e) {
+                    Logs.Log("Cannot find " + pkgName);
+                    e.printStackTrace();
+                }
+                break;
+            case RECEIVE:
+                res.appInfo = new ApplicationInfo();
+                res.appInfo.packageName = pkgName;
+                return res;
         }
 
         return null;
@@ -130,10 +170,11 @@ public class ApplicationType extends DefaultType {
 
             @Override
             public void onClick(View v) {
+                CharSequence appName = mContext.getPackageManager().getApplicationLabel(appInfo);
                 if (user == null) {
-                    session.send(user, new ApplicationPkgData(appInfo.packageName));
+                    session.send(user, new ApplicationPkgData(appInfo.packageName, appName));
                 } else {
-                    session.broadcast(new ApplicationPkgData(appInfo.packageName));
+                    session.broadcast(new ApplicationPkgData(appInfo.packageName, appName));
                 }
                 shareTypeDialog.dismiss();
             }
@@ -146,10 +187,18 @@ public class ApplicationType extends DefaultType {
 
         private static final long serialVersionUID = -2511250282736488733L;
 
+        // TODO : Icon 보내기
         public String pkgName;
+        public String appName;
 
-        public ApplicationPkgData(String pkgName) {
+        public ApplicationPkgData(String pkgName, CharSequence appName) {
             this.pkgName = pkgName;
+            this.appName = appName.toString();
         }
+    }
+
+    @Override
+    public DATA_TYPE getType() {
+        return DATA_TYPE.APP;
     }
 }

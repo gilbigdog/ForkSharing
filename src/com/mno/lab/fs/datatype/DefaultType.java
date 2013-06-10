@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.content.Context;
 import android.content.Intent;
@@ -21,8 +23,8 @@ import com.samsung.ssl.smeshnet.data.User;
 
 public abstract class DefaultType {
 
+    static final int DESTROY_TIMEOUT = 6000 * 5;
     static Handler mHandler = new Handler();
-
     Runnable destoryThread = new Runnable() {
 
         @Override
@@ -30,6 +32,30 @@ public abstract class DefaultType {
             onDestory();
         }
     };
+
+    public static enum TRANSFER_TYPE {
+        SEND,
+        RECEIVE
+    };
+
+    TRANSFER_TYPE mTransferType;
+
+    public static enum DATA_TYPE {
+        IMAGE,
+        VIDEO,
+        FILE,
+        APP,
+        MESSAGE,
+        CONTACT,
+        RAW
+    };
+
+    public interface SelectListener {
+
+        public void onSelectListener();
+    }
+
+    List<SelectListener> mSelectListener;
 
     /**
      * Intent sent from System
@@ -51,12 +77,16 @@ public abstract class DefaultType {
      * @param user
      *            User
      */
-    public abstract void send(ManagedSession session, User user);
+    public void send(ManagedSession session, User user) {
+        onPostDestory(DESTROY_TIMEOUT);
+    }
 
     /**
      * BroadCast a file or data
      */
-    public abstract void broadcast(ManagedSession session);
+    public void broadcast(ManagedSession session) {
+        onPostDestory(DESTROY_TIMEOUT);
+    }
 
     /**
      * @return Drawable corresponding to a type
@@ -64,17 +94,40 @@ public abstract class DefaultType {
     public abstract Drawable getIcon();
 
     /**
+     * @return DATA_TYPE
+     */
+    public abstract DATA_TYPE getType();
+
+    /**
+     * @return TRANSFER_TYPE
+     */
+    public TRANSFER_TYPE getTransferType() {
+        return mTransferType;
+    }
+
+    /**
      * @return View that displays contents corresponding to a type
      */
     public abstract View getHelperView(LayoutInflater inflater, View convertView);
 
     /**
-     * When user releases finger on this helper, it gets fired. Once it is done,
-     * then let other knows what will happen via Callback
-     * 
-     * @param callback
+     * When user releases finger on this helper, it gets fired.
      */
-    public abstract void onSelect(Handler callback);
+    public void onSelect() {
+        if (mSelectListener != null) {
+            for (SelectListener listener : mSelectListener) {
+                listener.onSelectListener();
+            }
+        }
+    }
+
+    public void setOnSelectListener(SelectListener listener) {
+        if (mSelectListener == null) {
+            mSelectListener = new ArrayList<SelectListener>();
+        }
+
+        mSelectListener.add(listener);
+    }
 
     /**
      * Free memory
@@ -92,6 +145,7 @@ public abstract class DefaultType {
      *            int
      */
     public void onPostDestory(int mil) {
+        stopDestory();
         mHandler.postDelayed(destoryThread, mil);
     }
 
@@ -120,7 +174,6 @@ public abstract class DefaultType {
         try {
             return ctx.getPackageManager().getApplicationIcon(pacakgeName);
         } catch (NameNotFoundException e) {
-            // TODO : 디폴트 아이콘 로드 하기
             e.printStackTrace();
         }
         return null;

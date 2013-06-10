@@ -3,6 +3,7 @@ package com.mno.lab.fs;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -18,11 +19,12 @@ import android.nfc.NfcAdapter.CreateNdefMessageCallback;
 import android.nfc.NfcAdapter.OnNdefPushCompleteCallback;
 import android.nfc.NfcEvent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,15 +62,13 @@ public class StarterActivity extends Activity implements
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Logs.Log("onServiceConnected");
-
             // get instance of the aidl binder
             mSessionManager = ISessionManager.Stub.asInterface(service);
 
             if (!TextUtils.isEmpty(ndefMsg)) {
                 Logs.Log("onServiceConnected : handle NDEF Message : " + ndefMsg);
                 try {
-                    mSessionManager.connect(ndefMsg, false);
+                    mSessionManager.connect(ndefMsg);
                 } catch (RemoteException e) {
                     Logs.Log("Not able to connect to " + ndefMsg);
                     e.printStackTrace();
@@ -86,26 +86,31 @@ public class StarterActivity extends Activity implements
                 }
             }
             notifyTo();
-            // TODO : when Smeshnet supports remote service, should unbind
-            // unbindService(mServiceConnection);
         }
     }
+
+    private final Handler mConnectHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-Log.d("GIL", "qwdqwd");
+
         Intent intent = getIntent();
         String action = intent.getAction();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             Logs.Log("ACTION_NDEF_DISCOVERED");
             if (isWiFiConnected()) {
-                String summ = getResources().getString(R.string.nv_no_wifi_string);
-                Toast.makeText(getApplicationContext(), summ, Toast.LENGTH_LONG).show();
-            } else {
                 List<String> messages = readNFCmessage(intent);
                 mServiceConnection.ndefMsg = messages.get(0);
                 bindToSessionManager();
+            } else {
+                String summ = getResources().getString(R.string.nv_no_wifi_string);
+                Toast.makeText(getApplicationContext(), summ, Toast.LENGTH_LONG).show();
             }
             finish();
         } else if (Intent.ACTION_SEND.equals(action)) {
@@ -153,22 +158,32 @@ Log.d("GIL", "qwdqwd");
             return;
         }
 
+        enableComponent("NFCFire", false);
         boolean hasNFC = nfcAvailality();
-        String summ;
+        String summ = null;
         if (hasNFC) {
             if (!mNfcAdapter.isEnabled()) {
                 summ = getResources().getString(R.string.nv_no_nfc_string);
+                if (!isWiFiConnected()) {
+                    summ += ", " + getResources().getString(R.string.nv_no_wifi_string);
+                }
+            } else if (!isWiFiConnected()) {
+                summ = getResources().getString(R.string.nv_no_wifi_string);
             } else {
                 summ = getResources().getString(R.string.nv_nfc_string);
+                enableComponent("NFCFire", true);
             }
         } else {
-            if (isWiFiConnected()) {
-                summ = getResources().getString(R.string.nv_no_nfc_capable_string);
-            } else {
-                summ = getResources().getString(R.string.nv_no_wifi_no_nfc_string);
-            }
+            summ = getResources().getString(R.string.nv_no_nfc_capable_string);
         }
         tv.setText(summ);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unbindService(mServiceConnection);
     }
 
     private boolean nfcAvailality() {
@@ -176,7 +191,6 @@ Log.d("GIL", "qwdqwd");
         if (mNfcAdapter == null) {
             Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG)
                     .show();
-            enableComponent("NFCFire", false);
             return false;
         }
         enableComponent("NFCFire", true);
@@ -190,7 +204,8 @@ Log.d("GIL", "qwdqwd");
                 PACKAGE_NAME + "." + name);
         pkgMgr.setComponentEnabledSetting(comp,
                 enable ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED :
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
     }
 
     synchronized void notifyTo() {
@@ -214,14 +229,14 @@ Log.d("GIL", "qwdqwd");
 
         if (mSessionManager == null) {
             bindToSessionManager();
-        }
 
-        // Wait until it binds to SessionManager
-        try {
-            waitRes(SLEEP_TO_BIND);
-        } catch (InterruptedException e) {
-            Logs.Log("Fail to sleep");
-            e.printStackTrace();
+            // Wait until it binds to SessionManager
+            try {
+                waitRes(SLEEP_TO_BIND);
+            } catch (InterruptedException e) {
+                Logs.Log("Fail to sleep");
+                e.printStackTrace();
+            }
         }
 
         // Get Channel Name
@@ -229,7 +244,9 @@ Log.d("GIL", "qwdqwd");
         try {
             if (mSessionManager != null) {
                 if (!mSessionManager.isConnected()) {
-                    mSessionManager.connect(null, true);
+                    session = UUID.randomUUID().toString();
+                    mSessionManager.connect(null);
+                    Logs.Log("No Exsiting connection, Create New Session");
                 }
                 session = mSessionManager.getSessionName();
             } else {
@@ -251,6 +268,7 @@ Log.d("GIL", "qwdqwd");
 
     private void bindToSessionManager() {
         Intent callService = new Intent(this, SessionManager.class);
+        startService(callService);
         if (!bindService(callService, mServiceConnection, BIND_AUTO_CREATE)) {
             Logs.Log("Cannot bind to SessionManager");
         }
@@ -273,13 +291,14 @@ Log.d("GIL", "qwdqwd");
     @Override
     public void onNdefPushComplete(NfcEvent event) {
         Logs.Log("System successfully delivers message to another device");
-        Toast.makeText(getApplicationContext(), "Join Channel", Toast.LENGTH_LONG).show();
-        finish();
     }
 
     private boolean isWiFiConnected() {
         // Setup WiFi
         WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+        if (wifi == null) {
+            return false;
+        }
 
         // Get WiFi status
         WifiInfo info = wifi.getConnectionInfo();

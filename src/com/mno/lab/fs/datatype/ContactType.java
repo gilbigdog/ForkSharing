@@ -18,10 +18,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.mno.lab.fs.R;
@@ -62,7 +62,6 @@ public class ContactType extends DefaultType {
         @Override
         public void onCancel(SmeshnetFileTransfer arg0) {
             // TODO : 취소되면
-
         }
 
         @Override
@@ -87,7 +86,7 @@ public class ContactType extends DefaultType {
         super(ctx);
     }
 
-    public static ContactType ParseContactUri(Context ctx, Intent intent) throws IOException {
+    public static ContactType ParseContactUri(Context ctx, Intent intent, TRANSFER_TYPE type) throws IOException {
         if (mIcon == null) {
             mIcon = GetDefaultIcon(ctx, PACKAGE_NAME);
         }
@@ -95,6 +94,7 @@ public class ContactType extends DefaultType {
         Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
 
         ContactType res = new ContactType(ctx);
+        res.mTransferType = type;
 
         // Write received contact onto file
         AssetFileDescriptor afd = ctx.getContentResolver().openAssetFileDescriptor(
@@ -130,6 +130,7 @@ public class ContactType extends DefaultType {
 
     @Override
     public void send(ManagedSession session, User user) {
+        super.send(session, user);
         if (session == null || user == null) {
             Logs.Log("Cannot send via null");
             return;
@@ -141,6 +142,7 @@ public class ContactType extends DefaultType {
 
     @Override
     public void broadcast(ManagedSession session) {
+        super.broadcast(session);
         if (session == null) {
             Logs.Log("Cannot send via null");
             return;
@@ -157,7 +159,15 @@ public class ContactType extends DefaultType {
         }
 
         if (fileName != null) {
-            fileName.delete();
+            Logs.Log(fileName.getName() + " gets deleted : " + fileName.delete());
+        }
+
+        if (mHelperView != null) {
+            mHelperView = null;
+        }
+
+        if (pic != null) {
+            pic.recycle();
         }
     }
 
@@ -167,22 +177,36 @@ public class ContactType extends DefaultType {
     }
 
     @Override
-    public void onSelect(Handler callback) {
-
+    public void onSelect() {
+        super.onSelect();
+        // TODO : action?
     }
 
     @Override
     public View getHelperView(LayoutInflater inflater, View convertView) {
 
         if (mHelperView == null) {
-            mHelperView = inflater.inflate(R.layout.contact_item, null);
+            LinearLayout mHelperView = (LinearLayout) inflater.inflate(R.layout.default_type_view, null);
+            TextView type_tv = (TextView) mHelperView.findViewById(R.id.transfer_type_tv);
+
+            switch (mTransferType) {
+                case SEND:
+                    type_tv.setText("S");
+                    break;
+                case RECEIVE:
+                    type_tv.setText("R");
+                    break;
+            }
+
+            View typeView = inflater.inflate(R.layout.contact_item, null);
             TextView nameTextView = (TextView) mHelperView.findViewById(R.id.contact_name);
             TextView phoneTextView = (TextView) mHelperView.findViewById(R.id.contact_phonenumber);
             ImageView iconImageView = (ImageView) mHelperView.findViewById(R.id.contact_pic);
-
             nameTextView.setText(name);
             phoneTextView.setText(phone);
             iconImageView.setImageBitmap(pic);
+
+            mHelperView.addView(typeView);
         }
 
         return mHelperView;
@@ -196,5 +220,10 @@ public class ContactType extends DefaultType {
         }
         reader.close();
         return results;
+    }
+
+    @Override
+    public DATA_TYPE getType() {
+        return DATA_TYPE.CONTACT;
     }
 }

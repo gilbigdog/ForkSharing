@@ -11,10 +11,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.mno.lab.fs.R;
 import com.mno.lab.fs.utils.Logs;
@@ -48,7 +49,6 @@ public class ImageType extends DefaultType {
         @Override
         public void onCancel(SmeshnetFileTransfer arg0) {
             // TODO : 취소되면
-
         }
 
         @Override
@@ -69,7 +69,7 @@ public class ImageType extends DefaultType {
         }
     };
 
-    public static ImageType ParseImageUri(Context ctx, Intent intent) throws IOException {
+    public static ImageType ParseImageUri(Context ctx, Intent intent, TRANSFER_TYPE type) throws IOException {
         if (mIcon == null) {
             mIcon = GetDefaultIcon(ctx, PACKAGE_NAME);
             if (mIcon == null) {
@@ -80,6 +80,7 @@ public class ImageType extends DefaultType {
         Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
 
         ImageType res = new ImageType(ctx);
+        res.mTransferType = type;
 
         // Write received image onto file
         AssetFileDescriptor afd = ctx.getContentResolver().openAssetFileDescriptor(
@@ -92,6 +93,7 @@ public class ImageType extends DefaultType {
 
     @Override
     public void send(ManagedSession session, User user) {
+        super.send(session, user);
         if (session == null || user == null) {
             Logs.Log("Cannot send via null");
             return;
@@ -103,6 +105,7 @@ public class ImageType extends DefaultType {
 
     @Override
     public void broadcast(ManagedSession session) {
+        super.broadcast(session);
         if (session == null) {
             Logs.Log("Cannot send via null");
             return;
@@ -114,7 +117,13 @@ public class ImageType extends DefaultType {
 
     @Override
     public void onDestory() {
-        // Do nothing
+        if (fileName != null) {
+            Logs.Log(fileName.getName() + " gets deleted : " + fileName.delete());
+        }
+
+        if (mHelperView != null) {
+            mHelperView = null;
+        }
     }
 
     @Override
@@ -123,18 +132,32 @@ public class ImageType extends DefaultType {
     }
 
     @Override
-    public void onSelect(Handler callback) {
-        // Select Action
+    public void onSelect() {
+        super.onSelect();
+        // TODO : action?
     }
 
     @Override
     public View getHelperView(LayoutInflater inflater, View convertView) {
 
         if (mHelperView == null) {
-            mHelperView = new ImageView(mContext);
+            LinearLayout mHelperView = (LinearLayout) inflater.inflate(R.layout.default_type_view, null);
+            TextView type_tv = (TextView) mHelperView.findViewById(R.id.transfer_type_tv);
 
-            mHelperView.setImageBitmap(GetCapturedImage(fileName.getAbsolutePath(), mIcon.getIntrinsicWidth() * 2,
+            switch (mTransferType) {
+                case SEND:
+                    type_tv.setText("S");
+                    break;
+                case RECEIVE:
+                    type_tv.setText("R");
+                    break;
+            }
+
+            ImageView typeView = new ImageView(mContext);
+            typeView.setImageBitmap(GetCapturedImage(fileName.getAbsolutePath(), mIcon.getIntrinsicWidth() * 2,
                     mIcon.getIntrinsicHeight()));
+
+            mHelperView.addView(typeView);
         }
 
         return mHelperView;
@@ -174,5 +197,10 @@ public class ImageType extends DefaultType {
 
         // get image
         return BitmapFactory.decodeFile(pathName, bitmap_Options);
+    }
+
+    @Override
+    public DATA_TYPE getType() {
+        return DATA_TYPE.IMAGE;
     }
 }

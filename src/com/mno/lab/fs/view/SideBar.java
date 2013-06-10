@@ -87,7 +87,7 @@ public class SideBar {
      */
     private Point mChildSize;
 
-    private Handler mHandler = new Handler();
+    final private Handler mHandler = new Handler();
     private Runnable hideListThread = new Runnable() {
 
         @Override
@@ -147,7 +147,7 @@ public class SideBar {
             // wrap_content not work for ListView
             // Calculate width of child view and set the value as
             // width of Listview
-            if ( mChildSize == null ){
+            if (mChildSize == null) {
                 mChildSize = GetSizeOfChildView(mContext, mSideHelperAdapter);
                 Logs.Log("mChildSize width = " + mChildSize.x + " height = " + mChildSize.y);
             }
@@ -381,6 +381,18 @@ public class SideBar {
         barHelperView.setAdapter(adapter);
         mSideHelperAdapter = adapter;
         mSideHelperAdapter.registerDataSetObserver(mAdapterObserver);
+    }
+
+    public void onPause() {
+        if (barGroup != null) {
+            barGroup.setVisibility(View.GONE);
+        }
+    }
+
+    public void onResume() {
+        if (barGroup != null) {
+            barGroup.setVisibility(View.VISIBLE);
+        }
     }
 
     public void onDestroy() {

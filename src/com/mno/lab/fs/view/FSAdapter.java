@@ -24,7 +24,7 @@ public class FSAdapter extends SideHelperAdapter {
         mInflater = LayoutInflater.from(ctx);
     }
 
-    public void addType(DefaultType type) {
+    public synchronized void addType(DefaultType type) {
         if (mTypes == null) {
             mTypes = new ArrayList<DefaultType>();
         }
@@ -33,18 +33,19 @@ public class FSAdapter extends SideHelperAdapter {
         notifyDataSetChanged();
     }
 
-    public void removeType(DefaultType type) {
+    public synchronized void removeType(DefaultType type) {
         if (mTypes == null) {
             return;
         }
 
         if (mTypes.remove(type)) {
+            type.onDestory();
             notifyDataSetChanged();
         }
     }
 
     @Override
-    public int getCount() {
+    public synchronized int getCount() {
         if (mTypes == null) {
             return 0;
         }
@@ -62,7 +63,7 @@ public class FSAdapter extends SideHelperAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public synchronized View getView(int position, View convertView, ViewGroup parent) {
         if (mTypes == null) {
             return null;
         }
@@ -81,7 +82,7 @@ public class FSAdapter extends SideHelperAdapter {
     }
 
     @Override
-    public View getHelperView(int position) {
+    public synchronized View getHelperView(int position) {
         if (mTypes == null) {
             return null;
         }
@@ -90,7 +91,7 @@ public class FSAdapter extends SideHelperAdapter {
     }
 
     @Override
-    public int getHelperSize() {
+    public synchronized int getHelperSize() {
         return getCount();
     }
 
@@ -99,6 +100,19 @@ public class FSAdapter extends SideHelperAdapter {
         if (mOnSelectListeners != null) {
             mOnSelectListeners.get(position).onSelect();
         }
+    }
+
+    public synchronized void clearData() {
+        if (mTypes == null) {
+            return;
+        }
+
+        for (DefaultType type : mTypes) {
+            type.onDestory();
+            mTypes.remove(type);
+        }
+
+        notifyDataSetChanged();
     }
 
     public static interface OnSelectListener {

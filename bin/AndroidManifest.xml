@@ -43,7 +43,6 @@
         <activity-alias
             android:name=".NFCFire"
             android:enabled="true"
-            android:permission="android.permission.ACCESS_NETWORK_STATE"
             android:targetActivity=".StarterActivity" >
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
@@ -58,9 +57,9 @@
         <activity-alias
             android:name=".IntentSharer"
             android:enabled="true"
-            android:theme="@android:style/Theme.NoDisplay"
             android:noHistory="true"
-            android:targetActivity=".StarterActivity" >
+            android:targetActivity=".StarterActivity"
+            android:theme="@android:style/Theme.NoDisplay" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
@@ -79,21 +78,13 @@
         </service>
 
         <!-- Session Management Services -->
-        <service
-            android:name="com.samsung.ssl.smeshnet.services.SessionService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
-        <service
-            android:name="com.samsung.ssl.smeshnet.services.SessionManagementService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
+        <service android:name="com.samsung.ssl.smeshnet.services.SessionService" />
+        <service android:name="com.samsung.ssl.smeshnet.services.SessionManagementService" />
         <service
             android:name="com.samsung.magnet.service.MagnetService"
             android:process=":remote" >
             <intent-filter>
-                <action android:name="@string/magnet_service_action" />
+                <action android:name="com.mno.lab.fs.magnet" />
             </intent-filter>
         </service>
     </application>
