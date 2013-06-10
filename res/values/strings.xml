@@ -9,4 +9,21 @@
     <string name="current_channel_tv">Current Channels</string>
     <string name="magnet_service_action">com.mno.lab.fs.Magnet</string>
 
+<<<<<<< HEAD
 </resources>
+=======
+    <!-- NFC View Description -->
+    <string name="nv_no_nfc_string">NFC needs to be turned on</string>
+    <string name="nv_no_nfc_capable_string">This device is not NFC capable device. Sorry</string>
+    <string name="nv_nfc_string">Please, touch this device to another NFC device and click screen</string>
+    <string name="nv_no_wifi_string">Turn on Wi-Fi then connect to the same AP as your friends are connecting to.</string>
+
+    <!-- Contact Layout Description -->
+    <string name="contact_pic_string">Image of this Contact</string>
+
+    <!-- Application Share Dialog -->
+    <string name="dialog_app_share_apk_title">File Sharing</string>
+    <string name="dialog_app_share_info_title">Info Sharing</string>
+    
+</resources>
+>>>>>>> efd8a6f... New Update

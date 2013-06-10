@@ -54,7 +54,13 @@
         <activity-alias
             android:name=".IntentSharer"
             android:enabled="true"
+<<<<<<< HEAD
             android:targetActivity=".StarterActivity" >
+=======
+            android:noHistory="true"
+            android:targetActivity=".StarterActivity"
+            android:theme="@android:style/Theme.NoDisplay" >
+>>>>>>> efd8a6f... New Update
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 
@@ -70,6 +76,7 @@
             android:permission="android.permission.SYSTEM_ALERT_WINDOW" >
         </service>
         <!-- Session Management Services -->
+<<<<<<< HEAD
         <service
             android:name="com.ssl.sessionservice.services.SessionService"
             android:enabled="true"
@@ -80,11 +87,15 @@
             android:enabled="true"
             android:exported="false" >
         </service>
+=======
+        <service android:name="com.samsung.ssl.smeshnet.services.SessionService" />
+        <service android:name="com.samsung.ssl.smeshnet.services.SessionManagementService" />
+>>>>>>> efd8a6f... New Update
         <service
             android:name="com.samsung.magnet.service.MagnetService"
             android:process=":remote" >
             <intent-filter>
-                <action android:name="@string/magnet_service_action" />
+                <action android:name="com.mno.lab.fs.magnet" />
             </intent-filter>
         </service>
     </application>

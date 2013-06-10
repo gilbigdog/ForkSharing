@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.widget.Toast;
 
+import com.mno.lab.fs.datatype.DefaultType;
 import com.mno.lab.fs.utils.Logs;
 import com.samsung.ssl.smeshnet.ManagedSession;
 import com.samsung.ssl.smeshnet.data.Data;
@@ -38,24 +38,15 @@ public class ConfirmProtocol {
 
     private Context mContext;
 
-    public static enum DATA_TYPE {
-        IMAGE,
-        VIDEO,
-        FILE,
-        APP,
-        MESSAGE,
-        RAW
-    };
-
     public static enum THUMBNAIL {
         HAS,
         NOT
     }
 
     /**
-     * Pending messages
+     * Stores Types to wait for confirmation message from receiver
      */
-    private Map<String, Intent> mWaitConfirm;
+    private Map<String, DefaultType> mWaitConfirm;
     private ManagedSession mSession;
 
     /**
@@ -65,8 +56,8 @@ public class ConfirmProtocol {
 
         @Override
         public void onReceivedData(Data data) {
-            User from = data.getFromUser();
             if (data instanceof Message) {
+                User from = data.getFromUser();
                 Matcher m = CONFIRM_PROTOCOL_RECEIVE_SEND_PATTERN.matcher(((Message) data).message);
                 if (m.matches() && m.find()) {
                     responseConfirmMessage(from, m);
@@ -100,51 +91,57 @@ public class ConfirmProtocol {
         mSession.addDataReceivedListener(mDataReceivedListener);
     }
 
-    public boolean sendData(User user, Intent intent) {
+    public boolean sendData(User user, DefaultType type) {
         if (!mSession.isConnected()) {
             Logs.Log("Please Join session first");
             return false;
         }
 
-        String uuid = UUID.fromString(String.valueOf(intent.hashCode())).toString();
+        String uuid = UUID.fromString(String.valueOf(type.hashCode())).toString();
         if (mWaitConfirm == null) {
-            mWaitConfirm = new HashMap<String, Intent>();
+            mWaitConfirm = new HashMap<String, DefaultType>();
         } else if (mWaitConfirm.containsKey(uuid)) {
             Logs.Log("sendData : Intent + " + uuid + " already exists");
             return false;
         }
 
         // Put uuid to hashMap to wait reponse before send actual data.
-        mWaitConfirm.put(uuid, intent);
+        mWaitConfirm.put(uuid, type);
 
+<<<<<<< HEAD
         // Generate Message in certain format
         String confirmMessage = GenerateConfirmMessage(uuid, intent);
+=======
+        // Generate confirm Message
+        String confirmMessage = GenerateConfirmMessage(uuid, type);
+>>>>>>> efd8a6f... New Update
 
         // Send generated message to ask confirmation of sending actual data
         mSession.send(user, new Message(confirmMessage));
         return true;
     }
 
-    private static String GenerateConfirmMessage(String uuid, Intent intent) {
+    private static String GenerateConfirmMessage(String uuid, DefaultType type) {
         // TODO : distinguish types
         // TODO : Thumbnail !!
-        return String.format(CONFIRM_PROTOCOL_SEND, uuid, DATA_TYPE.MESSAGE.toString(), THUMBNAIL.NOT.toString());
+        return String.format(CONFIRM_PROTOCOL_SEND, uuid, type.getType(), THUMBNAIL.NOT.toString());
     }
 
     private static String GenerateResponseMessage(String uuid, boolean isAnswer) {
         return String.format(CONFIRM_PROTOCOL_RESPONSE, uuid, isAnswer);
     }
 
-    private static Data GetUserData(Intent intent) {
-        // TODO should support more data types
-        return new Message(intent.getAction());
-    }
-
     /**
-     * Handles the confirm response message
+     * Handles the confirmation response message
      * 
+<<<<<<< HEAD
      * It will search intent corresponding to the UUID then perform action such as
      * send image, video, raw files, or Application
+=======
+     * It will search type corresponding to the UUID then send image, video, raw
+     * files, or Application
+     * 
+>>>>>>> efd8a6f... New Update
      * @param from
      * @param m
      */
@@ -152,9 +149,8 @@ public class ConfirmProtocol {
         if (Boolean.valueOf(m.group(2))) {
             String uuid = m.group(1);
             if (mWaitConfirm.containsKey(uuid)) {
-                Intent intent = mWaitConfirm.get(uuid);
-                mSession.send(from, GetUserData(intent));
-                // TODO Should support more types
+                DefaultType type = mWaitConfirm.get(uuid);
+                type.send(mSession, from);
             } else {
                 Logs.Log("onReceivedData : No Intent that is belong to " + uuid + " does not exists.");
             }
